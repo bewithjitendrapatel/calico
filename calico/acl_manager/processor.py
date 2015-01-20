@@ -33,7 +33,7 @@ class RuleProcessor(object):
     def recalc_rules(self):
         log.info("Recalculating ACLs")
         ns = self.network_store
-        
+
         # First get the group and endpoint information.
         group_members = {group: ns.get_group_members(group) for
                                                     (group) in ns.get_groups()}
@@ -41,17 +41,17 @@ class RuleProcessor(object):
         for group, endpoints in group_members.iteritems():
             for endpoint_uuid in endpoints.keys():
                 endpoint_groups[endpoint_uuid].append(group)
-        
+
         # Now build the ACLs for each endpoint.
         for endpoint_uuid, groups in endpoint_groups.iteritems():
             if endpoint_uuid == "": continue
             acls = {}
-            
+
             group = groups[0]
             if len(groups) > 1:
                 log.warning("%s Security groups other than 1st being ignored" %
                             endpoint_uuid)
-            
+
             rules = ns.get_group_rules(group)
             for (ip_type, ip_match, ip_len) in (("v4", ".", 32),
                                                 ("v6", ":", 128)):
@@ -63,11 +63,11 @@ class RuleProcessor(object):
                 assert rules["outbound_default"] == "deny"
                 ip_acls["inbound_default"] = "deny"
                 ip_acls["outbound_default"] = "deny"
-                
+
                 # Set up the inbound and outbound ACLs.
                 for bound in ("in", "out"):
                     ip_acls["%sbound" % bound] = []
-                    for rule in rules["%sbound" % bound]:                   
+                    for rule in rules["%sbound" % bound]:
                         if rule["group"] is not None:
                             # Process group rule.  The group id must be
                             # translated into a list of IPs in that group, so
@@ -88,5 +88,5 @@ class RuleProcessor(object):
                                       rule)
 
                 acls[ip_type] = ip_acls
-        
+
             self.acl_store.update_endpoint_rules(endpoint_uuid, acls)
